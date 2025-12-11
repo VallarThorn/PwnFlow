@@ -9,6 +9,6 @@ ctf-pipeline/
 ├── pipeline.py          # Extraction, templating, and orchestration
 ├── analyze.sh           # Runs analysis tools and writes analysis.md
 └── templates/
-    └── writeup\_template.md
+    └── writeup_template.md
 ```
 
