@@ -4,9 +4,11 @@ This project provides a minimal automation pipeline for preparing CTF pwn challe
 
 ## Structure
 
+```tree
 ctf-pipeline/
 ├── pipeline.py          # Extraction, templating, and orchestration
 ├── analyze.sh           # Runs analysis tools and writes analysis.md
 └── templates/
     └── writeup\_template.md
+```
 
