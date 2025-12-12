@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+venv/
+env/
+
+# Vim
+*.swp
+*.swo
+*~
+.*.un~
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+tests/
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
+# CTF files (don't commit actual challenges)
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
