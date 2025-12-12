@@ -12,4 +12,3 @@
 
 (Outline exploitation ideas here)
 
-

@@ -39,33 +39,36 @@ def copy_template(ctf_name: str):
     shutil.copy(template_src, template_dst)
     return template_dst
 
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", required=True, help="CTF challenge name")
     args = parser.parse_args()
 
     ctf = args.name
-    archive = None
 
-    # 1. Locate archive in ~/Downloads/ctf
-    for ext in ["zip", "tar", "tar.gz", "tgz", "7z"]:
-        candidate = DOWNLOADS / f"{ctf}.{ext}"
-        if candidate.exists():
-            archive = candidate
-            break
+    # 1. Locate the most recently modified archive in ~/Downloads/ctf
+    archives = [
+        p for p in DOWNLOADS.iterdir()
+        if p.suffix in [".zip", ".tar", ".gz", ".tgz", ".7z"]
+           or p.name.endswith((".tar.gz", ".tar.xz"))
+    ]
 
-    if archive is None:
-        raise FileNotFoundError(f"No archive found in {DOWNLOADS} for name {ctf}")
+    if not archives:
+        raise FileNotFoundError(f"No archives found in {DOWNLOADS}")
 
-    # 2. Extract to ~/Desktop/Ctf/ctf_name/
+    # Select newest file
+    archive = max(archives, key=lambda p: p.stat().st_mtime)
+
+    print(f"[INFO] Using archive: {archive.name}")
+
+    # 2. Extract to ~/Desktop/Ctf/{ctf}/
     dest = DEST_CTF / ctf
     extract_archive(archive, dest)
 
-    # 3. Run analysis
+    # 3. Run analysis pipeline
     subprocess.run(["bash", "analyze.sh", str(dest)], check=True)
 
-    # 4. Move analysis.md into Obsidian vault
+    # 4. Create Obsidian template and move analysis.md
     vault_writeup = copy_template(ctf)
     shutil.move(dest / "analysis.md", vault_writeup.parent / "analysis.md")
 
