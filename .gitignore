@@ -40,3 +40,25 @@ tests/
 *.tgz
 *.7z
 *.rar
+
+# Security - sensitive files
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+*.crt
+*.cer
+config.json
+secrets.*
+credentials.*
+*.token
+.aws/
+.ssh/
+
+# Personal notes and configuration
+notes.txt
+TODO.txt
+personal/
