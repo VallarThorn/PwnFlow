@@ -14,10 +14,14 @@ A modular, automated pipeline for setting up and analyzing CTF pwn challenges. T
 
 ## Todo
 
+We're actively improving PwnFlow and would love your help! Here are some features we'd like to add:
+
 - [ ] Create solve templates inside the challenge dir
 - [ ] Libc version detection: Auto-download matching libc, find one-gadgets
 - [ ] Auto generate exploit hints
 - [ ] Vulnerability pattern detection
+
+**Want to contribute?** We welcome contributions of all kinds! Whether you want to tackle one of these TODOs, suggest new features, fix bugs, or improve documentation, your help is appreciated. Feel free to open an issue to discuss ideas or submit a pull request with your improvements.
 
 ## Project Structure
 
@@ -36,7 +40,7 @@ pwn-pipeline/
 
 ## Component Overview
 
-### 1. `pwn-pipeline` - Main Orchestrator ⚙️
+### 1. `pwn-pipeline` - Main Orchestrator
 
 **Purpose:** Coordinates all pipeline phases in sequence
 
@@ -48,7 +52,7 @@ pwn-pipeline/
 - Provides unified CLI and logging
 - Handles errors across all phases
 
-**Can run independently:** ✅ Yes (this is the main entry point)
+**Can run independently:** Yes (this is the main entry point)
 
 **Usage:**
 ```bash
@@ -60,7 +64,7 @@ pwn-pipeline/
 
 ---
 
-### 2. `setup.py` - Extraction & Organization 📦
+### 2. `setup.py` - Extraction & Organization
 
 **Purpose:** Extract archives and organize challenge files
 
@@ -79,7 +83,7 @@ pwn-pipeline/
 - Checks if directory already exists (warns before overwriting)
 - Optional: Cleanup downloaded archive
 
-**Can run independently:** ✅ Yes
+**Can run independently:** Yes
 
 **Usage:**
 ```bash
@@ -109,7 +113,7 @@ pwn-pipeline/
 
 ---
 
-### 3. `analyze.sh` - Binary Analysis 🔍
+### 3. `analyze.sh` - Binary Analysis
 
 **Purpose:** Perform comprehensive binary analysis
 
@@ -130,7 +134,7 @@ pwn-pipeline/
 - Detects and reports on libraries, linkers, and source files
 - Runs pwninit for setup
 
-**Can run independently:** ✅ Yes
+**Can run independently:** Yes
 
 **Usage:**
 ```bash
@@ -148,7 +152,7 @@ pwn-pipeline/
 
 ---
 
-### 4. `templates.py` - Template Generation 📝
+### 4. `templates.py` - Template Generation
 
 **Purpose:** Generate exploit and writeup templates
 
@@ -171,7 +175,7 @@ pwn-pipeline/
 - Moves `analysis.md` to Obsidian vault
 - Checks if vault directory already exists
 
-**Can run independently:** ✅ Yes
+**Can run independently:** Yes
 
 **Usage:**
 ```bash
@@ -217,15 +221,6 @@ pwn-pipeline/
 - Directory creation utilities
 - CTF-based path building
 - Directory existence checking
-
-**Can run independently:** ❌ No (this is a library module)
-
-**Usage:**
-```python
-# Import in other modules
-from utils import logger, check_dependencies, ensure_directories
-from utils import build_challenge_path, build_vault_path
-```
 
 ---
 
@@ -276,180 +271,6 @@ chmod +x pwn-pipeline setup.py templates.py analyze.sh
 mkdir -p ~/Downloads/ctf
 mkdir -p ~/Desktop/Ctf
 mkdir -p ~/Desktop/Vault/Ctf
-```
-
----
-
-## CTF Organization
-
-The pipeline supports organizing challenges by CTF name using the `--ctf` or `-c` argument.
-
-### Without CTF Organization (Default)
-```bash
-./pwn-pipeline --name buffer_overflow
-
-# Creates:
-~/Desktop/Ctf/buffer_overflow/
-~/Desktop/Vault/Ctf/buffer_overflow/
-```
-
-### With CTF Organization
-```bash
-./pwn-pipeline --name buffer_overflow --ctf picoCTF2024
-
-# Creates:
-~/Desktop/Ctf/picoCTF2024/buffer_overflow/
-~/Desktop/Vault/Ctf/picoCTF2024/buffer_overflow/
-```
-
-### Benefits of CTF Organization
-- **Grouped Challenges**: All challenges from the same CTF in one folder
-- **Easy Navigation**: Find challenges by CTF name
-- **Clean Structure**: Separate different CTFs cleanly
-- **Vault Organization**: Writeups organized by CTF in Obsidian
-
-### Example: Multiple Challenges from Same CTF
-```bash
-# Process multiple challenges from DEFCON31
-./pwn-pipeline --name pwn1 --ctf DEFCON31
-./pwn-pipeline --name pwn2 --ctf DEFCON31
-./pwn-pipeline --name pwn3 --ctf DEFCON31
-
-# Results in:
-~/Desktop/Ctf/DEFCON31/
-  ├── pwn1/
-  ├── pwn2/
-  └── pwn3/
-
-~/Desktop/Vault/Ctf/DEFCON31/
-  ├── pwn1/
-  ├── pwn2/
-  └── pwn3/
-```
-
----
-
-## Usage Scenarios
-
-### Scenario 1: Full Automated Pipeline
-
-**Use Case:** You want complete automation from archive to exploit template
-
-```bash
-# 1. Download challenge to ~/Downloads/ctf/
-# 2. Run full pipeline
-./pwn-pipeline --name heap_overflow
-
-# Or with CTF organization
-./pwn-pipeline --name heap_overflow --ctf picoCTF2024
-
-# What happens:
-# ✓ Extracts archive
-# ✓ Organizes files
-# ✓ Runs analysis
-# ✓ Generates templates
-# ✓ Creates writeup
-# ✓ Cleans up archive
-```
-
-**Result:**
-- `~/Desktop/Ctf/[ctf/]heap_overflow/` - Challenge files + templates
-- `~/Desktop/Vault/Ctf/[ctf/]heap_overflow/` - Writeup + analysis
-
----
-
-### Scenario 2: Setup Only (Manual Analysis)
-
-**Use Case:** You want to extract and organize files, but do your own analysis
-
-```bash
-# Extract and organize only
-./setup.py --name buffer_overflow --no-cleanup
-
-# With CTF organization
-./setup.py --name buffer_overflow --ctf CSAW2024 --no-cleanup
-
-# What happens:
-# ✓ Extracts archive
-# ✓ Organizes files
-# ✗ No analysis
-# ✗ No templates
-```
-
-**Result:**
-- `~/Desktop/Ctf/[ctf/]buffer_overflow/` - Organized challenge files
-- Original archive kept in `~/Downloads/ctf/`
-
----
-
-### Scenario 3: Analysis Only (Re-analyze)
-
-**Use Case:** You already have the files, just want to run analysis again
-
-```bash
-# Run analysis on existing directory
-./analyze.sh ~/Desktop/Ctf/existing_challenge
-
-# Or with CTF organization
-./analyze.sh ~/Desktop/Ctf/picoCTF2024/existing_challenge
-
-# What happens:
-# ✓ Analyzes all binaries
-# ✓ Creates analysis.md
-```
-
-**Result:**
-- `analysis.md` in the target directory - Fresh analysis report
-
----
-
-### Scenario 4: Templates Only (Late Generation)
-
-**Use Case:** You set up the challenge earlier, now want templates
-
-```bash
-# Generate templates for existing challenge
-./templates.py --name rop_chain \
-               --challenge-dir ~/Desktop/Ctf/rop_chain \
-               --binary ~/Desktop/Ctf/rop_chain/rop_chain
-
-# With CTF organization
-./templates.py --name rop_chain --ctf HackTheBox \
-               --challenge-dir ~/Desktop/Ctf/HackTheBox/rop_chain \
-               --binary ~/Desktop/Ctf/HackTheBox/rop_chain/rop_chain
-
-# What happens:
-# ✓ Generates exploit.py
-# ✓ Generates .gdbinit
-# ✓ Generates solve.sh
-# ✓ Creates writeup template
-# ✓ Moves analysis.md to vault (if exists)
-```
-
-**Result:**
-- Templates in challenge directory
-- Writeup in vault (organized by CTF if specified)
-
----
-
-### Scenario 5: Custom Workflow
-
-**Use Case:** Mix and match components for your workflow
-
-```bash
-# 1. Setup with specific archive and CTF organization
-./setup.py --name custom_challenge --ctf DEFCON31 \
-           --archive ~/Downloads/special.tar.gz \
-           --no-cleanup
-
-# 2. Analyze
-./analyze.sh ~/Desktop/Ctf/DEFCON31/custom_challenge
-
-# 3. Generate templates later
-./templates.py --name custom_challenge --ctf DEFCON31 \
-               --challenge-dir ~/Desktop/Ctf/DEFCON31/custom_challenge \
-               --binary ~/Desktop/Ctf/DEFCON31/custom_challenge/bin \
-               --vault-path ~/Documents/MyVault/CTF
 ```
 
 ---
@@ -529,173 +350,6 @@ Options:
 
 ---
 
-## Generated Files
-
-### Without CTF Organization
-
-```
-~/Desktop/Ctf/challenge_name/
-├── binary                   # The main binary
-├── libc.so.6                # Provided libc (if any)
-├── ld-2.31.so               # Provided linker (if any)
-├── exploit.py               # Pwntools exploit template
-├── solve.sh                 # Quick solve script
-└── .gdbinit                 # GDB initialization
-
-~/Desktop/Vault/Ctf/challenge_name/
-├── challenge_name.md        # Writeup template
-└── analysis.md              # Binary analysis report
-```
-
-### With CTF Organization
-
-```
-~/Desktop/Ctf/picoCTF2024/challenge_name/
-├── binary                   # The main binary
-├── libc.so.6                # Provided libc (if any)
-├── ld-2.31.so               # Provided linker (if any)
-├── exploit.py               # Pwntools exploit template
-├── solve.sh                 # Quick solve script
-└── .gdbinit                 # GDB initialization
-
-~/Desktop/Vault/Ctf/picoCTF2024/challenge_name/
-├── challenge_name.md        # Writeup template
-└── analysis.md              # Binary analysis report
-```
-
-### exploit.py
-```bash
-# Run locally
-./exploit.py LOCAL
-
-# Run with GDB
-./exploit.py LOCAL GDB
-
-# Run remotely
-./exploit.py HOST=ctf.example.com PORT=1337
-```
-
-### solve.sh
-```bash
-./solve.sh local     # Quick local run
-./solve.sh remote    # Quick remote run (edit script for host/port)
-```
-
-### .gdbinit
-```bash
-gdb -x .gdbinit ./binary
-```
-
----
-
-## Python API
-
-You can also import and use the modules programmatically:
-
-```python
-from setup import setup_challenge, cleanup_archive
-from templates import generate_all_templates
-from utils import check_dependencies, logger, build_challenge_path
-
-# Check dependencies
-if not check_dependencies():
-    print("Missing dependencies!")
-    exit(1)
-
-# Setup challenge with CTF organization
-challenge_dir, archive, files = setup_challenge(
-    challenge_name="my_challenge",
-    archive_path=None,  # None = find latest
-    dest_base=Path("~/Desktop/Ctf"),
-    ctf_name="DEFCON31"  # Optional CTF organization
-)
-
-print(f"Found {len(files['binaries'])} binaries")
-print(f"Challenge directory: {challenge_dir}")
-
-# Generate templates with CTF organization
-if files['binaries']:
-    templates = generate_all_templates(
-        challenge_name="my_challenge",
-        challenge_dir=challenge_dir,
-        binary_path=files['binaries'][0],
-        vault_path=Path("~/Desktop/Vault/Ctf"),
-        ctf_name="DEFCON31"  # Optional CTF organization
-    )
-
-# Cleanup
-cleanup_archive(archive)
-```
-
----
-
-## Workflow Examples
-
-### Example 1: Quick CTF Challenge Setup
-
-```bash
-# Download challenge.zip to ~/Downloads/ctf/
-# Run pipeline with CTF organization
-./pwn-pipeline --name quick_challenge --ctf picoCTF2024
-
-# Start working
-cd ~/Desktop/Ctf/picoCTF2024/quick_challenge
-cat ~/Desktop/Vault/Ctf/picoCTF2024/quick_challenge/analysis.md
-./exploit.py LOCAL
-```
-
-### Example 2: Manual Control with CTF Organization
-
-```bash
-# Step 1: Extract only
-./setup.py --name manual_challenge --ctf CSAW2024 --no-cleanup
-
-# Step 2: Review files manually
-ls ~/Desktop/Ctf/CSAW2024/manual_challenge
-
-# Step 3: Run analysis when ready
-./analyze.sh ~/Desktop/Ctf/CSAW2024/manual_challenge
-
-# Step 4: Review analysis
-cat ~/Desktop/Ctf/CSAW2024/manual_challenge/analysis.md
-
-# Step 5: Generate templates
-./templates.py --name manual_challenge --ctf CSAW2024 \
-               --challenge-dir ~/Desktop/Ctf/CSAW2024/manual_challenge \
-               --binary ~/Desktop/Ctf/CSAW2024/manual_challenge/chall
-```
-
-### Example 3: Organize Existing CTF
-
-```bash
-# You're competing in DEFCON31, multiple challenges
-./pwn-pipeline --name pwn1 --ctf DEFCON31
-./pwn-pipeline --name pwn2 --ctf DEFCON31
-./pwn-pipeline --name pwn3 --ctf DEFCON31
-./pwn-pipeline --name pwn4 --ctf DEFCON31
-
-# All organized under:
-# ~/Desktop/Ctf/DEFCON31/
-# ~/Desktop/Vault/Ctf/DEFCON31/
-```
-
-### Example 4: Re-analyze Existing Challenge
-
-```bash
-# Already have files, just need fresh analysis
-./analyze.sh ~/Desktop/Ctf/old_challenge
-
-# Or with CTF organization
-./analyze.sh ~/Desktop/Ctf/picoCTF2023/old_challenge
-
-# Generate new templates
-./templates.py --name old_challenge --ctf picoCTF2023 \
-               --challenge-dir ~/Desktop/Ctf/picoCTF2023/old_challenge \
-               --binary ~/Desktop/Ctf/picoCTF2023/old_challenge/binary
-```
-
----
-
 ## Configuration
 
 Default paths (defined in `utils.py`):
@@ -713,60 +367,6 @@ Override with command-line arguments:
 
 ---
 
-## Troubleshooting
-
-### Module Import Errors
-
-If you get import errors when running individual modules:
-```bash
-# Make sure you're in the pwn-pipeline directory
-cd /path/to/pwn-pipeline
-
-# Run scripts from here
-./setup.py --name challenge
-```
-
-Or add to PYTHONPATH:
-```bash
-export PYTHONPATH="/path/to/pwn-pipeline:$PYTHONPATH"
-```
-
-### Missing Dependencies
-
-The pipeline checks dependencies on startup:
-```bash
-./pwn-pipeline --name test
-# [ERROR] Missing required tools: file, ldd
-# [ERROR] Install them with: sudo apt install file binutils
-```
-
-### No Archive Found
-
-```bash
-./setup.py --name challenge
-# [ERROR] No archives found in /home/user/Downloads/ctf
-```
-
-Solution: Place your .zip/.tar.gz file in `~/Downloads/ctf/`
-
-### Directory Already Exists
-
-```bash
-./setup.py --name challenge --ctf picoCTF2024
-# [WARNING] Challenge directory already exists: ~/Desktop/Ctf/picoCTF2024/challenge
-# [WARNING] Existing files may be overwritten
-```
-
-The pipeline warns you but continues. Files may be overwritten.
-
-### Permission Denied
-
-```bash
-chmod +x pwn-pipeline setup.py templates.py analyze.sh
-```
-
----
-
 ## Tips
 
 1. **Use CTF organization**: Add `--ctf` to keep challenges organized by competition
@@ -779,30 +379,3 @@ chmod +x pwn-pipeline setup.py templates.py analyze.sh
 8. **Verbose mode**: Add `-v` when debugging issues
 9. **Vault organization**: CTF-organized vault makes writeups easier to find in Obsidian
 
----
-
-## Development
-
-To extend the pipeline:
-
-1. **Add analysis tools**: Edit `analyze.sh` to include new analysis commands
-2. **Add template types**: Edit `templates.py` to create new templates
-3. **Add utilities**: Edit `utils.py` for shared functions
-4. **Modify workflow**: Edit `pwn-pipeline` to change orchestration
-
-All modules follow a consistent pattern:
-- CLI with argparse
-- Logging via `utils.logger`
-- Return values for programmatic use
-- Can run independently
-- Support CTF organization via `--ctf` argument
-
----
-
-## Contributing
-
-Feel free to submit issues or pull requests!
-
-## License
-
-MIT License
