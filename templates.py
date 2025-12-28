@@ -109,10 +109,10 @@ def start_remote(argv=[], *a, **kw):
 
 def start(argv=[], *a, **kw):
     """Start the exploit against the target"""
-    if args.LOCAL:
-        return start_local(argv, *a, **kw)
-    else:
+    if args.REMOTE:
         return start_remote(argv, *a, **kw)
+    else:
+        return start_local(argv, *a, **kw)
 
 
 # Specify GDB script here (breakpoints etc)
@@ -124,21 +124,16 @@ continue
 #                    EXPLOIT GOES HERE
 # ===========================================================
 
-def exploit():
-    """Main exploit function"""
-    io = start()
+io = start()
 
-    # Example: receive until prompt and send payload
-    # io.recvuntil(b"Input: ")
-    # payload = b"A" * 64
-    # io.sendline(payload)
+# Example: receive until prompt and send payload
+# io.recvuntil(b"Input: ")
+# payload = b"A" * 64
+# io.sendline(payload)
 
-    # Get the flag
-    io.interactive()
+# Get the flag
+io.interactive()
 
-
-if __name__ == "__main__":
-    exploit()
 '''
 
     exploit_path = dest_dir / filename
