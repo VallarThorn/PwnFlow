@@ -10,19 +10,19 @@ from pathlib import Path
 from typing import Optional
 
 from utils import (
-    logger, setup_logging, ensure_directories, VAULT, get_script_dir,
-    build_vault_path, check_directory_exists
+    logger, setup_logging, ensure_directories, get_vault_dir, configure_paths,
+    get_script_dir, build_vault_path, check_directory_exists
 )
 
 
-def create_writeup_template(challenge_name: str, vault_path: Path = VAULT,
+def create_writeup_template(challenge_name: str, vault_path: Path = None,
                            ctf_name: str = None) -> Path:
     """
     Create writeup template in Obsidian vault with substituted placeholders.
 
     Args:
         challenge_name: Name of the challenge
-        vault_path: Base path for vault
+        vault_path: Base path for vault (defaults to config)
         ctf_name: Optional CTF name for organization
 
     Returns:
@@ -262,7 +262,7 @@ fi
 
 def generate_all_templates(challenge_name: str, challenge_dir: Path,
                           binary_path: Optional[Path] = None,
-                          vault_path: Path = VAULT, ctf_name: str = None) -> dict:
+                          vault_path: Path = None, ctf_name: str = None) -> dict:
     """
     Generate all templates for a challenge.
 
@@ -270,7 +270,7 @@ def generate_all_templates(challenge_name: str, challenge_dir: Path,
         challenge_name: Name of the challenge
         challenge_dir: Challenge directory path
         binary_path: Path to primary binary (optional)
-        vault_path: Base vault path
+        vault_path: Base vault path (defaults to config)
         ctf_name: Optional CTF name for organization
 
     Returns:
@@ -279,6 +279,10 @@ def generate_all_templates(challenge_name: str, challenge_dir: Path,
     logger.info(f"Generating all templates for {challenge_name}")
     logger.debug(f"challenge_dir parameter: {challenge_dir}")
     logger.debug(f"binary_path parameter: {binary_path}")
+    
+    if vault_path is None:
+        vault_path = get_vault_dir()
+        
     logger.debug(f"vault_path parameter: {vault_path}")
     logger.debug(f"ctf_name parameter: {ctf_name}")
 
@@ -303,14 +307,14 @@ def generate_all_templates(challenge_name: str, challenge_dir: Path,
 
 
 def move_analysis_to_vault(challenge_dir: Path, challenge_name: str,
-                           vault_path: Path = VAULT, ctf_name: str = None) -> Optional[Path]:
+                           vault_path: Path = None, ctf_name: str = None) -> Optional[Path]:
     """
     Move analysis.md from challenge directory to vault.
 
     Args:
         challenge_dir: Challenge directory
         challenge_name: Name of the challenge
-        vault_path: Base vault path
+        vault_path: Base vault path (defaults to config)
         ctf_name: Optional CTF name for organization
 
     Returns:
@@ -341,13 +345,16 @@ def main():
     parser.add_argument("--challenge-dir", type=Path, required=True,
                        help="Challenge directory path")
     parser.add_argument("--binary", type=Path, help="Path to primary binary")
-    parser.add_argument("--vault-path", type=Path, default=VAULT,
-                       help=f"Vault base path (default: {VAULT})")
+    parser.add_argument("--vault-path", type=Path,
+                       help="Vault base path (defaults to config)")
     parser.add_argument("-v", "--verbose", action="store_true",
                        help="Enable verbose logging")
+    parser.add_argument("--debug", action="store_true",
+                       help="Enable debug mode (use test paths)")
     args = parser.parse_args()
 
     setup_logging(args.verbose)
+    configure_paths(args.debug)
 
     try:
         # Generate templates

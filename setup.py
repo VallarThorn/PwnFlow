@@ -15,18 +15,18 @@ from typing import Dict, List
 
 from utils import (
     logger, setup_logging, ensure_directories,
-    DOWNLOADS, DEST_CTF,
+    get_downloads_dir, get_dest_dir, configure_paths,
     is_library, is_linker, is_source, get_file_info,
     build_challenge_path, check_directory_exists
 )
 
 
-def find_latest_archive(downloads_dir: Path) -> Path:
+def find_latest_archive(downloads_dir: Path = None) -> Path:
     """
     Find the most recently modified archive in the downloads directory.
 
     Args:
-        downloads_dir: Directory to search for archives
+        downloads_dir: Directory to search for archives (default: configured downloads)
 
     Returns:
         Path to the most recent archive
@@ -34,6 +34,9 @@ def find_latest_archive(downloads_dir: Path) -> Path:
     Raises:
         FileNotFoundError: If no archives found or directory doesn't exist
     """
+    if downloads_dir is None:
+        downloads_dir = get_downloads_dir()
+
     if not downloads_dir.exists():
         raise FileNotFoundError(f"Downloads directory does not exist: {downloads_dir}")
 
@@ -290,14 +293,14 @@ def categorize_files(directory: Path) -> Dict[str, List[Path]]:
 
 
 def setup_challenge(challenge_name: str, archive_path: Path = None,
-                   dest_base: Path = DEST_CTF, ctf_name: str = None) -> tuple:
+                   dest_base: Path = None, ctf_name: str = None) -> tuple:
     """
     Set up challenge directory and extract files.
 
     Args:
         challenge_name: Name of the challenge
         archive_path: Path to archive (if None, will find latest)
-        dest_base: Base directory for challenges
+        dest_base: Base directory for challenges (defaults to config)
         ctf_name: Optional CTF name for organization
 
     Returns:
@@ -305,7 +308,7 @@ def setup_challenge(challenge_name: str, archive_path: Path = None,
     """
     # Find archive if not provided
     if archive_path is None:
-        archive_path = find_latest_archive(DOWNLOADS)
+        archive_path = find_latest_archive()
 
     # Build challenge directory path
     challenge_dir = build_challenge_path(challenge_name, ctf_name, dest_base)
@@ -350,15 +353,18 @@ def main():
     parser.add_argument("--name", required=True, help="CTF challenge name")
     parser.add_argument("-c", "--ctf", help="CTF name for organization (creates ~/Desktop/Ctf/{ctf}/{name})")
     parser.add_argument("--archive", type=Path, help="Specific archive to extract (optional)")
-    parser.add_argument("--dest", type=Path, default=DEST_CTF,
-                       help=f"Base destination directory (default: {DEST_CTF})")
+    parser.add_argument("--dest", type=Path,
+                       help="Base destination directory (defaults to config)")
     parser.add_argument("--no-cleanup", action="store_true",
                        help="Don't delete archive after extraction")
     parser.add_argument("-v", "--verbose", action="store_true",
                        help="Enable verbose logging")
+    parser.add_argument("--debug", action="store_true",
+                       help="Enable debug mode (use test paths)")
     args = parser.parse_args()
 
     setup_logging(args.verbose)
+    configure_paths(args.debug)
 
     try:
         # Setup challenge

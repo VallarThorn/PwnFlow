@@ -3,32 +3,125 @@
 Utility functions shared across the pwn pipeline modules.
 """
 import logging
+import os
 import shutil
 import sys
 from pathlib import Path
 from typing import List
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='[%(levelname)s] %(message)s',
-    handlers=[logging.StreamHandler(sys.stdout)]
-)
 logger = logging.getLogger(__name__)
 
 
-# Default paths
-DOWNLOADS = Path.home() / "Downloads" / "ctf"
-DEST_CTF = Path.home() / "Desktop" / "Ctf"
-VAULT = Path.home() / "Desktop" / "Vault" / "Ctf"
+class PathConfig:
+    """Configuration for paths used in the pipeline."""
+    _instance = None
+    
+    def __init__(self):
+        self._downloads = None
+        self._dest_ctf = None
+        self._vault = None
+        
+    @classmethod
+    def get(cls):
+        if cls._instance is None:
+            cls._instance = PathConfig()
+            # Default configuration (non-debug)
+            cls._instance.configure()
+        return cls._instance
+        
+    def configure(self, debug: bool = False):
+        """
+        Configure paths based on debug mode and environment variables.
+        
+        Args:
+            debug: If True, use test environment variables and paths.
+        """
+        if debug:
+            self._downloads = Path(os.getenv("PWN_TEST_DOWNLOADS", "/tmp/pwnflow/downloads"))
+            self._dest_ctf = Path(os.getenv("PWN_TEST_DEST", "/tmp/pwnflow/ctf"))
+            self._vault = Path(os.getenv("PWN_TEST_VAULT", "/tmp/pwnflow/vault"))
+            logger.debug(f"Configured in DEBUG mode: {self._dest_ctf}")
+        else:
+            self._downloads = Path(os.getenv("PWN_DOWNLOADS", "~/Downloads/ctf")).expanduser()
+            self._dest_ctf = Path(os.getenv("PWN_DEST", "~/Desktop/Ctf")).expanduser()
+            self._vault = Path(os.getenv("PWN_VAULT", "~/Desktop/Vault/Ctf")).expanduser()
+            
+    @property
+    def downloads(self) -> Path:
+        return self._downloads
+        
+    @property
+    def dest(self) -> Path:
+        return self._dest_ctf
+        
+    @property
+    def vault(self) -> Path:
+        return self._vault
+
+
+# Helper functions to access config
+def configure_paths(debug: bool = False):
+    """Configure the global path configuration."""
+    PathConfig.get().configure(debug)
+
+def get_downloads_dir() -> Path:
+    return PathConfig.get().downloads
+
+def get_dest_dir() -> Path:
+    return PathConfig.get().dest
+
+def get_vault_dir() -> Path:
+    return PathConfig.get().vault
+
 
 # Tool lists
 REQUIRED_TOOLS = ["file", "ldd", "strings"]
 OPTIONAL_TOOLS = ["pwninit", "pwn", "checksec", "7z", "rabin2", "rizin", "gdb", "readelf", "objdump"]
 
 
+class ColorFormatter(logging.Formatter):
+    """Custom formatter with color support."""
+    
+    grey = "\x1b[38;20m"
+    blue = "\x1b[34;20m"
+    green = "\x1b[32;20m"
+    yellow = "\x1b[33;20m"
+    red = "\x1b[31;20m"
+    bold_red = "\x1b[31;1m"
+    reset = "\x1b[0m"
+
+    FORMAT_STR = "[%(levelname)s] %(message)s"
+
+    FORMATS = {
+        logging.DEBUG: grey + FORMAT_STR + reset,
+        logging.INFO: blue + FORMAT_STR + reset,
+        logging.WARNING: yellow + FORMAT_STR + reset,
+        logging.ERROR: red + FORMAT_STR + reset,
+        logging.CRITICAL: bold_red + FORMAT_STR + reset
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
+
+
 def setup_logging(verbose: bool = False):
-    """Configure logging level."""
+    """Configure logging with color and level."""
+    # Remove existing handlers
+    root = logging.getLogger()
+    if root.handlers:
+        for handler in root.handlers:
+            root.removeHandler(handler)
+            
+    # Create handler with color formatter
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(ColorFormatter())
+    
+    # Configure logger
+    logger.handlers = []
+    logger.addHandler(handler)
+    
     if verbose:
         logger.setLevel(logging.DEBUG)
     else:
@@ -83,35 +176,41 @@ def ensure_directories(*paths: Path):
         logger.debug(f"Ensured directory exists: {path}")
 
 
-def build_challenge_path(challenge_name: str, ctf_name: str = None, base_path: Path = DEST_CTF) -> Path:
+def build_challenge_path(challenge_name: str, ctf_name: str = None, base_path: Path = None) -> Path:
     """
     Build the challenge directory path, optionally with CTF organization.
 
     Args:
         challenge_name: Name of the challenge
         ctf_name: Optional CTF name for organization
-        base_path: Base directory for challenges
+        base_path: Base directory for challenges (defaults to config)
 
     Returns:
         Path to challenge directory
     """
+    if base_path is None:
+        base_path = get_dest_dir()
+        
     if ctf_name:
         return base_path / ctf_name / challenge_name
     return base_path / challenge_name
 
 
-def build_vault_path(challenge_name: str, ctf_name: str = None, base_vault: Path = VAULT) -> Path:
+def build_vault_path(challenge_name: str, ctf_name: str = None, base_vault: Path = None) -> Path:
     """
     Build the vault directory path, optionally with CTF organization.
 
     Args:
         challenge_name: Name of the challenge
         ctf_name: Optional CTF name for organization
-        base_vault: Base vault directory
+        base_vault: Base vault directory (defaults to config)
 
     Returns:
         Path to vault directory
     """
+    if base_vault is None:
+        base_vault = get_vault_dir()
+
     if ctf_name:
         return base_vault / ctf_name / challenge_name
     return base_vault / challenge_name

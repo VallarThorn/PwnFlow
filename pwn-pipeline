@@ -13,7 +13,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from utils import (
     logger, setup_logging, check_dependencies,
-    DOWNLOADS, DEST_CTF, VAULT, get_script_dir
+    get_downloads_dir, get_dest_dir, get_vault_dir, configure_paths,
+    get_script_dir
 )
 from setup import setup_challenge, cleanup_archive
 from templates import generate_all_templates, move_analysis_to_vault
@@ -58,7 +59,7 @@ def run_analysis(challenge_dir: Path, script_path: Path) -> bool:
 
 
 def run_pipeline(challenge_name: str, archive_path: Path = None,
-                dest_base: Path = DEST_CTF, vault_path: Path = VAULT,
+                dest_base: Path = None, vault_path: Path = None,
                 ctf_name: str = None, no_cleanup: bool = False,
                 skip_analysis: bool = False, skip_templates: bool = False) -> int:
     """
@@ -67,8 +68,8 @@ def run_pipeline(challenge_name: str, archive_path: Path = None,
     Args:
         challenge_name: Name of the challenge
         archive_path: Path to archive (if None, finds latest)
-        dest_base: Base directory for challenges
-        vault_path: Base vault path
+        dest_base: Base directory for challenges (defaults to config)
+        vault_path: Base vault path (defaults to config)
         ctf_name: Optional CTF name for organization
         no_cleanup: Don't delete archive after processing
         skip_analysis: Skip binary analysis
@@ -78,6 +79,12 @@ def run_pipeline(challenge_name: str, archive_path: Path = None,
         Exit code (0 for success, 1 for failure)
     """
     script_dir = get_script_dir()
+    
+    # Resolve defaults if None
+    if dest_base is None:
+        dest_base = get_dest_dir()
+    if vault_path is None:
+        vault_path = get_vault_dir()
 
     try:
         # Phase 1: Setup (extraction and file organization)
@@ -203,6 +210,9 @@ Examples:
   pwn-pipeline --name challenge --skip-analysis
   pwn-pipeline --name challenge --skip-templates
 
+  # Debug mode (use test paths)
+  pwn-pipeline --name test_run --debug
+  
   # Verbose output for debugging
   pwn-pipeline --name challenge -v
         """
@@ -216,11 +226,11 @@ Examples:
     parser.add_argument("-c", "--ctf",
                        help="CTF name for organization (creates ~/Desktop/Ctf/{ctf}/{name})")
     parser.add_argument("--archive", type=Path,
-                       help="Specific archive to process (default: latest in ~/Downloads/ctf)")
-    parser.add_argument("--dest", type=Path, default=DEST_CTF,
-                       help=f"Challenge destination directory (default: {DEST_CTF})")
-    parser.add_argument("--vault-path", type=Path, default=VAULT,
-                       help=f"Obsidian vault path (default: {VAULT})")
+                       help="Specific archive to process (default: latest in configured downloads)")
+    parser.add_argument("--dest", type=Path,
+                       help="Challenge destination directory (defaults to config)")
+    parser.add_argument("--vault-path", type=Path,
+                       help="Obsidian vault path (defaults to config)")
 
     # Flags
     parser.add_argument("--no-cleanup", action="store_true",
@@ -231,11 +241,14 @@ Examples:
                        help="Skip template generation phase")
     parser.add_argument("-v", "--verbose", action="store_true",
                        help="Enable verbose logging")
+    parser.add_argument("--debug", action="store_true",
+                       help="Enable debug mode (use test paths)")
 
     args = parser.parse_args()
 
-    # Setup logging
+    # Setup logging and paths
     setup_logging(args.verbose)
+    configure_paths(args.debug)
 
     # Check dependencies
     if not check_dependencies():
