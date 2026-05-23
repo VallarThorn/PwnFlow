@@ -20,22 +20,25 @@ from setup import setup_challenge, cleanup_archive
 from templates import generate_all_templates, move_analysis_to_vault
 
 
-def run_analysis(challenge_dir: Path, script_path: Path) -> bool:
+def run_analysis(challenge_dir: Path, script_path: Path, target: Path = None) -> bool:
     """
-    Run the analysis script on the challenge directory.
+    Run the analysis script on a directory or a single binary.
 
     Args:
-        challenge_dir: Path to challenge directory
+        challenge_dir: Path to challenge directory (used as fallback target)
         script_path: Path to analyze.sh script
+        target: Optional explicit binary file or directory to pass to analyze.sh
 
     Returns:
         True if analysis succeeded, False otherwise
     """
     logger.info("Starting analysis pipeline")
 
+    arg = str(target) if target else str(challenge_dir)
+
     try:
         result = subprocess.run(
-            ["bash", str(script_path), str(challenge_dir)],
+            ["bash", str(script_path), arg],
             check=True,
             capture_output=True,
             text=True
@@ -218,8 +221,14 @@ Examples:
         """
     )
 
-    # Required arguments
-    parser.add_argument("--name", required=True,
+    # Analyze-only mode — skips extraction, templates, and cleanup
+    parser.add_argument("--analyze-only", action="store_true",
+                       help="Run binary analysis on an existing file or directory without the full pipeline")
+    parser.add_argument("--target", type=Path,
+                       help="Binary file or directory to analyze (used with --analyze-only)")
+
+    # Required arguments (not required in --analyze-only mode)
+    parser.add_argument("--name",
                        help="CTF challenge name")
 
     # Optional arguments
@@ -254,6 +263,24 @@ Examples:
     if not check_dependencies():
         logger.error("Dependency check failed. Please install missing tools.")
         return 1
+
+    # --analyze-only: skip extraction/templates, just run analyze.sh
+    if args.analyze_only:
+        target = args.target or Path(".")
+        if not target.exists():
+            logger.error(f"Target not found: {target}")
+            return 1
+        script_dir = get_script_dir()
+        analyze_script = script_dir / "analyze.sh"
+        if not analyze_script.exists():
+            logger.error(f"analyze.sh not found at {analyze_script}")
+            return 1
+        challenge_dir = target if target.is_dir() else target.parent
+        success = run_analysis(challenge_dir, analyze_script, target)
+        return 0 if success else 1
+
+    if not args.name:
+        parser.error("--name is required when not using --analyze-only")
 
     # Run pipeline
     return run_pipeline(

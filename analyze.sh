@@ -2,13 +2,24 @@
 
 set -e
 
-TARGET_DIR="$1"
-OUTPUT="$TARGET_DIR/analysis.md"
-
-if [ -z "$TARGET_DIR" ]; then
-    echo "Usage: $0 <target_directory>"
+if [ -z "$1" ]; then
+    echo "Usage: $0 <binary|target_directory>"
     exit 1
 fi
+
+# Accept either a single binary file or a directory of files
+if [ -f "$1" ]; then
+    BINARIES=("$1")
+    TARGET_DIR=$(dirname "$1")
+elif [ -d "$1" ]; then
+    TARGET_DIR="$1"
+    mapfile -t BINARIES < <(find "$TARGET_DIR" -maxdepth 2 -type f -executable ! -name "*.so*" ! -name "ld-*")
+else
+    echo "[!] '$1' is not a file or directory"
+    exit 1
+fi
+
+OUTPUT="$(realpath "$TARGET_DIR")/analysis.md"
 
 echo "[*] Starting analysis of $TARGET_DIR"
 
@@ -17,9 +28,6 @@ echo "# Binary Analysis" > "$OUTPUT"
 echo "" >> "$OUTPUT"
 echo "Generated on: $(date)" >> "$OUTPUT"
 echo "" >> "$OUTPUT"
-
-# Find all executables
-BINARIES=($(find "$TARGET_DIR" -maxdepth 2 -type f -executable ! -name "*.so*" ! -name "ld-*"))
 
 if [ ${#BINARIES[@]} -eq 0 ]; then
     echo "[!] No executable binaries found."
